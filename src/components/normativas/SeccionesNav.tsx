@@ -10,27 +10,33 @@ interface TablaTecnicaRef {
 interface SeccionesNavProps {
   secciones: Seccion[]
   tablasTecnicas?: TablaTecnicaRef[]
+  figurasCount?: number
   seccionActiva: string | null
   tablaTecnicaActiva?: string | null
+  galeriaActiva?: boolean
   onSelectSeccion: (numero: string) => void
   onSelectTablaTecnica?: (id: string) => void
+  onSelectGaleria?: () => void
 }
 
 // Definicion de Anexos con sus titulos oficiales
 const ANEXOS_INFO: Record<string, { titulo: string; tipo: string }> = {
   'A': { titulo: 'Requisitos especificos', tipo: 'Normativo' },
   'B': { titulo: 'Falsas alarmas', tipo: 'Informativo' },
-  'C': { titulo: 'Certificados', tipo: 'Informativo' },
+  'C': { titulo: 'Modelos de documentos', tipo: 'Informativo' },
   'D': { titulo: 'Bibliografia', tipo: 'Informativo' }
 }
 
 export default function SeccionesNav({
   secciones,
   tablasTecnicas = [],
+  figurasCount = 0,
   seccionActiva,
   tablaTecnicaActiva,
+  galeriaActiva,
   onSelectSeccion,
-  onSelectTablaTecnica
+  onSelectTablaTecnica,
+  onSelectGaleria
 }: SeccionesNavProps) {
   // Filtrar capitulos principales (0-16)
   const capitulosPrincipales = secciones.filter(s => {
@@ -132,6 +138,27 @@ export default function SeccionesNav({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Galeria de Figuras */}
+      {figurasCount > 0 && (
+        <div>
+          <h3 className="font-semibold text-purple-700 mb-2 text-sm uppercase tracking-wide">
+            Figuras
+          </h3>
+          <button
+            onClick={() => onSelectGaleria?.()}
+            className={`w-full text-left px-2 py-1 text-sm rounded transition-colors ${
+              galeriaActiva
+                ? 'bg-purple-100 text-purple-700 font-medium'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <span className="truncate block">
+              Ver Galeria ({figurasCount} figuras)
+            </span>
+          </button>
         </div>
       )}
     </nav>

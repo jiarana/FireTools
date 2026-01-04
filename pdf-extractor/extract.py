@@ -30,12 +30,27 @@ except ImportError:
     print("Ejecuta: pip install -r requirements.txt")
     sys.exit(1)
 
+# PyMuPDF para extraccion de imagenes/figuras
+try:
+    import fitz  # PyMuPDF
+    PYMUPDF_DISPONIBLE = True
+except ImportError:
+    PYMUPDF_DISPONIBLE = False
+    print("Advertencia: PyMuPDF no instalado. Extraccion de figuras deshabilitada.")
+
 
 # Directorios
 SCRIPT_DIR = Path(__file__).parent
 PDFS_DIR = SCRIPT_DIR / "pdfs"
 OUTPUT_NORMAS_DIR = SCRIPT_DIR / "output" / "normas"
 OUTPUT_TABLAS_DIR = SCRIPT_DIR / "output" / "tablas"
+OUTPUT_FIGURAS_DIR = SCRIPT_DIR / "output" / "figuras"
+
+# Configuracion de extraccion de figuras
+MIN_IMAGEN_WIDTH = 50   # Ignorar imagenes menores a 50px
+MIN_IMAGEN_HEIGHT = 50
+MAX_FIGURAS_POR_PDF = 100  # Limite razonable
+FORMATOS_IMAGEN_VALIDOS = ['png', 'jpeg', 'jpg', 'bmp', 'tiff']
 
 # Palabras que NO son titulos de seccion (falsos positivos)
 PALABRAS_EXCLUIDAS = [
@@ -56,6 +71,8 @@ PATRONES_RUIDO = [
     r'© AENOR \d{4}[^\n]*',
     r'G.nova,?\s*6[^\n]*',  # Direccion AENOR completa
     r'Reproducción prohibida[^\n]*',
+    # Pie de pagina con direccion AENOR
+    r'^\d{5}\s+MADRID.*(?:aenor|Fax)[^\n]*$',
     # Encabezados/pies con codigo de norma y numero de pagina
     r'-\s*\d+\s*-\s*UNE[^\n]*',  # \"- 13 - UNE 23007-14:2014\" (pagina antes de norma)
     r'^UNE\s*\d+[-:]?\d*[-:]?\d*\s*-\s*\d+\s*-\s*$',  # \"UNE 23007-14:2014 - 5 -\"
@@ -64,8 +81,8 @@ PATRONES_RUIDO = [
     r'^\d+\s*$',  # Lineas con solo numeros de pagina
     # Lineas de indice/TOC (texto con puntos y numero de pagina)
     r'^[^\n]*\.{3,}\s*\d+\s*$',
-    # Titulos de anexos que aparecen en contenido
-    r'^ANEXO\s+[A-Z]\s*\([^)]+\)\s*$',
+    # Titulos de anexos que aparecen en contenido (solo A y B que tienen subsecciones)
+    r'^ANEXO\s+[AB]\s*\([^)]+\)\s*$',
     r'^REQUISITOS ESPECÍFICOS\s*$',
     r'^FALSAS ALARMAS\s*$',
 ]
@@ -75,6 +92,10 @@ def limpiar_texto(texto: str) -> str:
     """Elimina ruido del texto extraido (encabezados, pies, licencias)."""
     for patron in PATRONES_RUIDO:
         texto = re.sub(patron, '', texto, flags=re.MULTILINE | re.IGNORECASE)
+
+    # Unir lineas que terminan en guion (palabras partidas)
+    # Ej: "Dispositi-\nvos" -> "Dispositivos"
+    texto = re.sub(r'-\n([a-záéíóúñ])', r'\1', texto)
 
     # Eliminar lineas vacias multiples
     texto = re.sub(r'\n{3,}', '\n\n', texto)
@@ -199,50 +220,83 @@ def detectar_secciones(texto: str) -> list:
         r'^(\d{1,2})\s+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s,]+)$',
         # Subsecciones (1.1, 6.5.2, etc.)
         r'^(\d{1,2}(?:\.\d{1,2}){1,3})\s+([A-ZÁÉÍÓÚÑa-záéíóúñ][^\n]{3,80})$',
-        # Anexos (A.1, B.2, etc.)
+        # Anexos numerados (A.1, B.2, etc.)
         r'^([A-D]\.\d{1,2}(?:\.\d{1,2})?)\s+([A-ZÁÉÍÓÚÑa-záéíóúñ][^\n]{3,80})$',
     ]
+
+    # Patron especial para encabezados de anexo completos (sin subsecciones)
+    # Ej: "ANEXO C (Informativo)" - debe terminar ahi, sin puntos del TOC
+    patron_anexo_titulo = r'^ANEXO\s+([A-Z])\s*\((?:Normativo|Informativo)\)\s*$'
 
     lineas = texto.split('\n')
     seccion_actual = None
     contenido_actual = []
     secciones_vistas = set()  # Para evitar duplicados
 
+    # Titulos conocidos de anexos sin subsecciones
+    titulos_anexos = {
+        'C': 'MODELOS DE DOCUMENTOS',
+        'D': 'BIBLIOGRAFIA'
+    }
+
     for linea in lineas:
         linea_strip = linea.strip()
-
-        # Probar cada patron
         encontrado = False
-        for patron in patrones:
-            match = re.match(patron, linea_strip)
-            if match:
-                numero = match.group(1)
-                titulo = match.group(2).strip()
 
-                # Validar titulo
-                if not es_titulo_valido(titulo):
-                    continue
+        # 1. Verificar primero si es un encabezado de anexo completo (solo C y D que no tienen subsecciones)
+        match_anexo = re.match(patron_anexo_titulo, linea_strip)
+        if match_anexo:
+            letra_anexo = match_anexo.group(1)
 
-                # Evitar duplicados
-                clave = f"{numero}_{titulo[:20]}"
-                if clave in secciones_vistas:
-                    continue
-                secciones_vistas.add(clave)
-
+            # Solo crear seccion para anexos sin subsecciones numeradas (C y D)
+            if letra_anexo in titulos_anexos:
                 # Guardar seccion anterior
                 if seccion_actual:
                     seccion_actual["contenido"] = limpiar_contenido_seccion(limpiar_texto('\n'.join(contenido_actual)), seccion_actual['numero'])
                     secciones.append(seccion_actual)
 
-                # Nueva seccion
+                # Crear seccion para el anexo completo (usar letra como numero)
+                titulo_anexo = titulos_anexos.get(letra_anexo, '')
                 seccion_actual = {
-                    "numero": numero,
-                    "titulo": titulo,
+                    "numero": f"{letra_anexo}.0",  # C.0, D.0 para anexos sin subsecciones
+                    "titulo": titulo_anexo or f"Anexo {letra_anexo}",
                     "contenido": ""
                 }
                 contenido_actual = []
                 encontrado = True
-                break
+
+        # 2. Probar patrones normales de seccion
+        if not encontrado:
+            for patron in patrones:
+                match = re.match(patron, linea_strip)
+                if match:
+                    numero = match.group(1)
+                    titulo = match.group(2).strip()
+
+                    # Validar titulo
+                    if not es_titulo_valido(titulo):
+                        continue
+
+                    # Evitar duplicados
+                    clave = f"{numero}_{titulo[:20]}"
+                    if clave in secciones_vistas:
+                        continue
+                    secciones_vistas.add(clave)
+
+                    # Guardar seccion anterior
+                    if seccion_actual:
+                        seccion_actual["contenido"] = limpiar_contenido_seccion(limpiar_texto('\n'.join(contenido_actual)), seccion_actual['numero'])
+                        secciones.append(seccion_actual)
+
+                    # Nueva seccion
+                    seccion_actual = {
+                        "numero": numero,
+                        "titulo": titulo,
+                        "contenido": ""
+                    }
+                    contenido_actual = []
+                    encontrado = True
+                    break
 
         if not encontrado and seccion_actual:
             contenido_actual.append(linea)
@@ -314,6 +368,255 @@ def extraer_tablas(pdf_path: Path) -> list:
     return tablas
 
 
+def bboxes_adyacentes(bbox1: tuple, bbox2: tuple, tolerancia: float = 5) -> bool:
+    """
+    Verifica si dos bboxes estan adyacentes (se tocan o casi se tocan).
+
+    Args:
+        bbox1: Tupla (x0, y0, x1, y1) del primer bbox
+        bbox2: Tupla (x0, y0, x1, y1) del segundo bbox
+        tolerancia: Pixeles de margen para considerar adyacencia
+
+    Returns:
+        True si los bboxes se superponen o estan muy cerca
+    """
+    x0_1, y0_1, x1_1, y1_1 = bbox1
+    x0_2, y0_2, x1_2, y1_2 = bbox2
+
+    # Expandir bbox1 con tolerancia
+    x0_1_exp = x0_1 - tolerancia
+    y0_1_exp = y0_1 - tolerancia
+    x1_1_exp = x1_1 + tolerancia
+    y1_1_exp = y1_1 + tolerancia
+
+    # Verificar si NO hay superposicion (y negar el resultado)
+    no_superponen = (x1_1_exp < x0_2 or x1_2 < x0_1_exp or
+                     y1_1_exp < y0_2 or y1_2 < y0_1_exp)
+
+    return not no_superponen
+
+
+def agrupar_imagenes_adyacentes(image_infos: list, tolerancia: float = 5) -> list:
+    """
+    Agrupa imagenes que estan adyacentes o superpuestas.
+
+    Args:
+        image_infos: Lista de diccionarios con info de imagenes (de page.get_image_info())
+        tolerancia: Pixeles de margen para considerar adyacencia
+
+    Returns:
+        Lista de bboxes combinados (tuplas x0, y0, x1, y1)
+    """
+    if not image_infos:
+        return []
+
+    # Filtrar imagenes validas (con bbox)
+    bboxes = []
+    for info in image_infos:
+        bbox = info.get('bbox')
+        if bbox and len(bbox) == 4:
+            bboxes.append(tuple(bbox))
+
+    if not bboxes:
+        return []
+
+    # Algoritmo de agrupacion: unir bboxes que se tocan o estan muy cerca
+    grupos = []
+    usados = set()
+
+    for i, bbox1 in enumerate(bboxes):
+        if i in usados:
+            continue
+
+        # Iniciar nuevo grupo con este bbox
+        grupo_bbox = list(bbox1)  # [x0, y0, x1, y1]
+        usados.add(i)
+
+        # Buscar bboxes adyacentes y expandir el grupo iterativamente
+        cambio = True
+        while cambio:
+            cambio = False
+            for j, bbox2 in enumerate(bboxes):
+                if j in usados:
+                    continue
+                # Verificar si bbox2 esta adyacente al grupo actual
+                if bboxes_adyacentes(tuple(grupo_bbox), bbox2, tolerancia):
+                    # Expandir grupo_bbox para incluir bbox2
+                    grupo_bbox[0] = min(grupo_bbox[0], bbox2[0])
+                    grupo_bbox[1] = min(grupo_bbox[1], bbox2[1])
+                    grupo_bbox[2] = max(grupo_bbox[2], bbox2[2])
+                    grupo_bbox[3] = max(grupo_bbox[3], bbox2[3])
+                    usados.add(j)
+                    cambio = True
+
+        grupos.append(tuple(grupo_bbox))
+
+    return grupos
+
+
+def obtener_seccion_cercana(pagina: int, secciones: list, paginas_totales: int) -> dict:
+    """
+    Estima la seccion mas cercana basandose en el numero de pagina.
+
+    Heuristica:
+    1. Paginas 1-5 suelen ser intro/indice -> seccion 0
+    2. Para el resto, mapear proporcionalmente entre secciones principales
+    """
+    seccion_cercana = {"numero": "0", "titulo": "INTRODUCCION", "estimado": True}
+
+    if not secciones:
+        return seccion_cercana
+
+    # Paginas iniciales (indice, portada)
+    if pagina <= 5:
+        return seccion_cercana
+
+    # Obtener secciones principales (sin subsecciones)
+    secciones_principales = [s for s in secciones if re.match(r'^\d+$', s['numero'])]
+
+    if not secciones_principales:
+        # Usar cualquier seccion disponible
+        secciones_principales = secciones[:10]
+
+    if not secciones_principales:
+        return seccion_cercana
+
+    # Estimar seccion basandose en posicion relativa en el documento
+    # Asumimos distribucion aproximadamente uniforme
+    paginas_contenido = paginas_totales - 5  # Restamos paginas de intro
+    pagina_relativa = pagina - 5
+
+    if paginas_contenido <= 0:
+        return seccion_cercana
+
+    # Calcular indice de seccion aproximado
+    proporcion = pagina_relativa / paginas_contenido
+    idx_seccion = int(proporcion * len(secciones_principales))
+    idx_seccion = min(idx_seccion, len(secciones_principales) - 1)
+    idx_seccion = max(idx_seccion, 0)
+
+    seccion = secciones_principales[idx_seccion]
+    return {
+        "numero": seccion['numero'],
+        "titulo": seccion['titulo'][:50],  # Truncar titulo largo
+        "estimado": True
+    }
+
+
+def extraer_figuras(pdf_path: Path, secciones: list, nombre_base: str, paginas_totales: int) -> list:
+    """
+    Extrae figuras del PDF agrupando imagenes adyacentes y renderizando como pixmap.
+
+    Este metodo resuelve el problema de figuras fragmentadas: algunos PDFs almacenan
+    figuras como multiples imagenes en cuadricula. En lugar de extraer cada imagen
+    individualmente, detectamos imagenes adyacentes, combinamos sus bboxes, y
+    renderizamos el area completa como una unica imagen.
+
+    Args:
+        pdf_path: Ruta al archivo PDF
+        secciones: Lista de secciones ya extraidas (para mapear seccion_cercana)
+        nombre_base: Nombre base para los archivos de salida
+        paginas_totales: Numero total de paginas del PDF
+
+    Returns:
+        Lista de diccionarios con metadatos de cada figura
+    """
+    if not PYMUPDF_DISPONIBLE:
+        print("  PyMuPDF no disponible, saltando extraccion de figuras")
+        return []
+
+    figuras = []
+
+    # Crear directorio de salida para esta norma
+    dir_figuras_norma = OUTPUT_FIGURAS_DIR / nombre_base
+    dir_figuras_norma.mkdir(parents=True, exist_ok=True)
+
+    # DPI para renderizado (balance entre calidad y tamano)
+    DPI_RENDERIZADO = 150
+
+    try:
+        doc = fitz.open(pdf_path)
+
+        for num_pagina in range(len(doc)):
+            if len(figuras) >= MAX_FIGURAS_POR_PDF:
+                print(f"  Advertencia: Limite de {MAX_FIGURAS_POR_PDF} figuras alcanzado")
+                break
+
+            # Saltar paginas de portada/indice (1-5) y ultima pagina (logos)
+            if num_pagina < 5 or num_pagina >= len(doc) - 1:
+                continue
+
+            pagina = doc[num_pagina]
+
+            # Obtener informacion de posicion de todas las imagenes en la pagina
+            image_infos = pagina.get_image_info()
+
+            if not image_infos:
+                continue
+
+            # Agrupar imagenes adyacentes en bboxes combinados
+            grupos_bbox = agrupar_imagenes_adyacentes(image_infos, tolerancia=5)
+
+            for idx, bbox in enumerate(grupos_bbox):
+                try:
+                    x0, y0, x1, y1 = bbox
+                    ancho = x1 - x0
+                    alto = y1 - y0
+
+                    # Filtrar figuras muy pequenas (iconos, decoraciones)
+                    if ancho < MIN_IMAGEN_WIDTH or alto < MIN_IMAGEN_HEIGHT:
+                        continue
+
+                    # Filtrar banners/logos (muy anchos y bajos, ratio > 4:1)
+                    if ancho > 500 and alto < 200 and ancho / alto > 4:
+                        continue
+
+                    # Renderizar el area como pixmap
+                    clip = fitz.Rect(bbox)
+                    pix = pagina.get_pixmap(clip=clip, dpi=DPI_RENDERIZADO)
+
+                    # Generar nombre de archivo (siempre PNG para mejor calidad)
+                    nombre_figura = f"figura_p{num_pagina + 1}_{idx + 1}.png"
+                    ruta_figura = dir_figuras_norma / nombre_figura
+
+                    # Guardar imagen
+                    pix.save(str(ruta_figura))
+
+                    # Estimar seccion cercana
+                    seccion_cercana = obtener_seccion_cercana(num_pagina + 1, secciones, paginas_totales)
+
+                    # Crear metadatos de la figura
+                    figura_metadata = {
+                        "id": f"fig_p{num_pagina + 1}_{idx + 1}",
+                        "archivo": nombre_figura,
+                        "ruta_relativa": f"figuras/{nombre_base}/{nombre_figura}",
+                        "pagina": num_pagina + 1,
+                        "posicion": {
+                            "x": round(x0, 1),
+                            "y": round(y0, 1),
+                            "ancho": round(ancho, 1),
+                            "alto": round(alto, 1)
+                        },
+                        "seccion_cercana": seccion_cercana,
+                        "formato": "png",
+                        "tamano_bytes": len(pix.tobytes())
+                    }
+
+                    figuras.append(figura_metadata)
+
+                except Exception as e:
+                    print(f"    Error renderizando figura {idx} de pagina {num_pagina + 1}: {e}")
+                    continue
+
+        doc.close()
+        print(f"  Figuras extraidas: {len(figuras)}")
+
+    except Exception as e:
+        print(f"  Error abriendo PDF con PyMuPDF: {e}")
+
+    return figuras
+
+
 def extraer_texto_completo(pdf_path: Path) -> str:
     """Extrae todo el texto del PDF."""
     texto_completo = []
@@ -357,7 +660,11 @@ def procesar_pdf(pdf_path: Path) -> dict:
     tablas = extraer_tablas(pdf_path)
     print(f"  Tablas extraidas: {len(tablas)}")
 
-    # Construir resultado (sin texto_completo para reducir tamaño)
+    # Extraer figuras (imagenes embebidas)
+    nombre_base = pdf_path.stem.lower().replace(" ", "_").replace("=", "-")
+    figuras = extraer_figuras(pdf_path, secciones, nombre_base, num_paginas)
+
+    # Construir resultado (sin texto_completo para reducir tamano)
     resultado = {
         "norma": info_norma["codigo"] or pdf_path.stem,
         "titulo": info_norma["titulo"],
@@ -365,7 +672,8 @@ def procesar_pdf(pdf_path: Path) -> dict:
         "fecha_extraccion": datetime.now().isoformat(),
         "paginas_totales": num_paginas,
         "secciones": secciones,
-        "tablas": tablas
+        "tablas": tablas,
+        "figuras": figuras
     }
 
     return resultado
@@ -409,6 +717,7 @@ def main():
 
     OUTPUT_NORMAS_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_TABLAS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FIGURAS_DIR.mkdir(parents=True, exist_ok=True)
 
     # Obtener lista de PDFs
     if args.archivo:

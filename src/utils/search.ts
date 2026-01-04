@@ -14,6 +14,26 @@ export interface Tabla {
   datos: string[][]
 }
 
+export interface Figura {
+  id: string
+  archivo: string
+  ruta_relativa: string
+  pagina: number
+  posicion: {
+    x: number | null
+    y: number | null
+    ancho: number
+    alto: number
+  }
+  seccion_cercana: {
+    numero: string
+    titulo: string
+    estimado?: boolean
+  }
+  formato: string
+  tamano_bytes: number
+}
+
 export interface Norma {
   norma: string
   titulo: string
@@ -22,6 +42,7 @@ export interface Norma {
   paginas_totales: number
   secciones: Seccion[]
   tablas: Tabla[]
+  figuras?: Figura[]
   texto_completo?: string
 }
 
