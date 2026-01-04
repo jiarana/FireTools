@@ -9,7 +9,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="bg-gray-800 text-gray-300 py-4 text-center text-sm">
-        <p>FireTools - Herramientas para Ingenieros de Proteccion contra Incendios</p>
+        <p>FireTools - Herramientas para Ingenieros de Proteccion contra Incendios | v1.0</p>
       </footer>
     </div>
   )

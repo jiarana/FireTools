@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+
+# PDF Extractor
+pdf-extractor/pdfs/*.pdf
+pdf-extractor/output/normas/*.json
+pdf-extractor/output/tablas/*.json
+!pdf-extractor/**/.gitkeep

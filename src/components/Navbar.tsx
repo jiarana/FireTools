@@ -28,6 +28,9 @@ export default function Navbar() {
             <Link to="/calculadoras" className={linkClass('/calculadoras')}>
               Calculadoras
             </Link>
+            <Link to="/normativas" className={linkClass('/normativas')}>
+              Normativas
+            </Link>
           </div>
         </div>
       </div>

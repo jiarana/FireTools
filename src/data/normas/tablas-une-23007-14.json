@@ -1,0 +1,211 @@
+{
+  "norma": "UNE 23007-14:2014",
+  "descripcion": "Tablas tecnicas principales - Datos curados manualmente",
+  "tablas": [
+    {
+      "id": "tabla_A1",
+      "numero_tabla": "A.1",
+      "titulo": "Distribucion de detectores puntuales de humo y calor",
+      "capitulo": "6",
+      "capitulo_titulo": "Planificacion y diseno",
+      "articulo": "6.5",
+      "articulo_titulo": "Distribucion de detectores y pulsadores de alarma manuales",
+      "anexo": "Anexo A (Normativo)",
+      "apartado_anexo": "A.6.5.2.2",
+      "apartado_anexo_titulo": "Distancia entre detectores",
+      "descripcion": "Superficie de vigilancia (Sv) y distancia maxima (Dmax) segun tipo de detector y altura del local",
+      "pagina_referencia": 49,
+      "columnas": ["Superficie local", "Tipo detector", "Altura (m)", "Sv (m2) plano", "Dmax (m) plano", "Sv (m2) inclinado", "Dmax (m) inclinado"],
+      "notas": [
+        "Pendiente plana: <= 20 grados",
+        "Pendiente inclinada: > 20 grados",
+        "Sv = Superficie de vigilancia por detector",
+        "Dmax = Distancia maxima entre detectores"
+      ],
+      "datos": [
+        {
+          "superficie_local": "SL <= 80 m2",
+          "tipo_detector": "UNE-EN 54-7 (Humo)",
+          "altura_max": "<= 12",
+          "sv_plano": 80,
+          "dmax_plano": 6.3,
+          "sv_inclinado": 80,
+          "dmax_inclinado": 6.3
+        },
+        {
+          "superficie_local": "SL > 80 m2",
+          "tipo_detector": "UNE-EN 54-7 (Humo)",
+          "altura_max": "<= 6",
+          "sv_plano": 60,
+          "dmax_plano": 5.5,
+          "sv_inclinado": 90,
+          "dmax_inclinado": 6.7
+        },
+        {
+          "superficie_local": "SL > 80 m2",
+          "tipo_detector": "UNE-EN 54-7 (Humo)",
+          "altura_max": "6 < h <= 12",
+          "sv_plano": 80,
+          "dmax_plano": 6.3,
+          "sv_inclinado": 110,
+          "dmax_inclinado": 7.4
+        },
+        {
+          "superficie_local": "SL <= 30 m2",
+          "tipo_detector": "UNE-EN 54-5 Clase A1 (Calor)",
+          "altura_max": "<= 7.5",
+          "sv_plano": 30,
+          "dmax_plano": 3.9,
+          "sv_inclinado": 30,
+          "dmax_inclinado": 3.9
+        },
+        {
+          "superficie_local": "SL <= 30 m2",
+          "tipo_detector": "UNE-EN 54-5 Clase A2-G (Calor)",
+          "altura_max": "<= 6",
+          "sv_plano": 30,
+          "dmax_plano": 3.9,
+          "sv_inclinado": 30,
+          "dmax_inclinado": 3.9
+        },
+        {
+          "superficie_local": "SL > 30 m2",
+          "tipo_detector": "UNE-EN 54-5 Clase A1 (Calor)",
+          "altura_max": "<= 7.5",
+          "sv_plano": 20,
+          "dmax_plano": 3.2,
+          "sv_inclinado": 40,
+          "dmax_inclinado": 4.5
+        },
+        {
+          "superficie_local": "SL > 30 m2",
+          "tipo_detector": "UNE-EN 54-5 Clase A2-G (Calor)",
+          "altura_max": "<= 6",
+          "sv_plano": 20,
+          "dmax_plano": 3.2,
+          "sv_inclinado": 40,
+          "dmax_inclinado": 4.5
+        }
+      ]
+    },
+    {
+      "id": "tabla_A2",
+      "numero_tabla": "A.2",
+      "titulo": "Area de vigilancia y distancia (factores de reduccion)",
+      "capitulo": "6",
+      "capitulo_titulo": "Planificacion y diseno",
+      "articulo": "6.5",
+      "articulo_titulo": "Distribucion de detectores y pulsadores de alarma manuales",
+      "anexo": "Anexo A (Normativo)",
+      "apartado_anexo": "A.6.5.2.2",
+      "apartado_anexo_titulo": "Distancia entre detectores",
+      "descripcion": "Reduccion de superficie de vigilancia para deteccion coincidente (-30%) o sistemas de extincion (-50%)",
+      "pagina_referencia": 51,
+      "notas": [
+        "Reduccion del 30%: Para detectores con deteccion coincidente",
+        "Reduccion del 50%: Para detectores destinados a activar sistema fijo de extincion"
+      ],
+      "columnas": ["Sv base (m2)", "Dmax base (m)", "Sv -30% (m2)", "Dmax -30% (m)", "Sv -50% (m2)", "Dmax -50% (m)"],
+      "datos": [
+        {"sv_base": 20, "dmax_base": 3.2, "sv_30": 14, "dmax_30": 2.7, "sv_50": 10, "dmax_50": 2.2},
+        {"sv_base": 30, "dmax_base": 3.9, "sv_30": 21, "dmax_30": 3.2, "sv_50": 15, "dmax_50": 2.7},
+        {"sv_base": 40, "dmax_base": 4.5, "sv_30": 28, "dmax_30": 3.7, "sv_50": 20, "dmax_50": 3.2},
+        {"sv_base": 60, "dmax_base": 5.5, "sv_30": 42, "dmax_30": 4.6, "sv_50": 30, "dmax_50": 3.9},
+        {"sv_base": 80, "dmax_base": 6.3, "sv_30": 56, "dmax_30": 5.3, "sv_50": 40, "dmax_50": 4.5},
+        {"sv_base": 90, "dmax_base": 6.7, "sv_30": 63, "dmax_30": 5.6, "sv_50": 45, "dmax_50": 4.8},
+        {"sv_base": 110, "dmax_base": 7.4, "sv_30": 77, "dmax_30": 6.2, "sv_50": 55, "dmax_50": 5.3}
+      ]
+    },
+    {
+      "id": "tabla_A3",
+      "numero_tabla": "A.3",
+      "titulo": "Distribucion de detectores lineales de haz optico",
+      "capitulo": "6",
+      "capitulo_titulo": "Planificacion y diseno",
+      "articulo": "6.5",
+      "articulo_titulo": "Distribucion de detectores y pulsadores de alarma manuales",
+      "anexo": "Anexo A (Normativo)",
+      "apartado_anexo": "A.6.5.2.2",
+      "apartado_anexo_titulo": "Distancia entre detectores",
+      "descripcion": "Cobertura de detectores lineales UNE-EN 54-12 segun altura del local",
+      "pagina_referencia": 51,
+      "columnas": ["Altura local (m)", "A - Anchura max (m)", "Sv maxima (m2)", "Dv plano (m)", "Dv inclinado (m)"],
+      "notas": [
+        "A = Distancia entre dos barreras contiguas",
+        "Dv = Distancia vertical desde el eje del haz al techo",
+        "Pendiente plana: <= 20 grados",
+        "Pendiente inclinada: > 20 grados"
+      ],
+      "datos": [
+        {"altura": "h <= 6", "anchura_max": 12, "sv_max": 1600, "dv_plano": "0.3 - 0.5", "dv_inclinado": "0.3 - 0.5"},
+        {"altura": "6 < h <= 12", "anchura_max": 13, "sv_max": 1600, "dv_plano": "0.4 - 0.6", "dv_inclinado": "0.5 - 0.8"},
+        {"altura": "12 < h <= 25", "anchura_max": 15, "sv_max": 1600, "dv_plano": "0.4 - 0.6", "dv_inclinado": "0.5 - 0.8"}
+      ]
+    },
+    {
+      "id": "tabla_A4",
+      "numero_tabla": "A.4",
+      "titulo": "Separacion de los detectores de humo del techo con pendiente",
+      "capitulo": "6",
+      "capitulo_titulo": "Planificacion y diseno",
+      "articulo": "6.5",
+      "articulo_titulo": "Distribucion de detectores y pulsadores de alarma manuales",
+      "anexo": "Anexo A (Normativo)",
+      "apartado_anexo": "A.6.5.2.3",
+      "apartado_anexo_titulo": "Configuracion del techo. Techos con pendiente",
+      "descripcion": "Distancia vertical (Dv) entre el detector de humo y el techo segun altura y pendiente",
+      "pagina_referencia": 52,
+      "columnas": ["Altura local (m)", "Dv pendiente <= 20 grados", "Dv pendiente > 20 grados"],
+      "notas": [
+        "Dv = Distancia entre cubierta/techo y elemento sensible",
+        "Rh = Altura del local"
+      ],
+      "datos": [
+        {"altura": "<= 6 m", "dv_plano": "0 - 0.25 m", "dv_inclinado": "0.20 - 0.50 m"},
+        {"altura": "> 6 m", "dv_plano": "0 - 0.40 m", "dv_inclinado": "0.35 - 1.00 m"}
+      ]
+    },
+    {
+      "id": "tabla_A5",
+      "numero_tabla": "A.5",
+      "titulo": "Relacion entre detectores y alveolos",
+      "capitulo": "6",
+      "capitulo_titulo": "Planificacion y diseno",
+      "articulo": "6.5",
+      "articulo_titulo": "Distribucion de detectores y pulsadores de alarma manuales",
+      "anexo": "Anexo A (Normativo)",
+      "apartado_anexo": "A.6.5.2.4",
+      "apartado_anexo_titulo": "Distribucion de los detectores de calor",
+      "descripcion": "Instalacion de detectores en techos con vigas segun superficie del alveolo",
+      "pagina_referencia": 55,
+      "columnas": ["Tipo detector", "Sv maxima (m2)", "Superficie alveolo (m2)", "Instalacion"],
+      "notas": [
+        "Aplicable cuando superficie alveolo < 0.6 x Sv",
+        "Si altura correas > 0.8 m, cada alveolo debe tener detectores",
+        "Si superficie alveolo > Sv, cada alveolo es un recinto independiente"
+      ],
+      "datos": [
+        {"tipo": "Calor", "sv_max": 20, "alveolo": "> 12", "instalacion": "1 detector / 1 alveolo"},
+        {"tipo": "Calor", "sv_max": 20, "alveolo": "8 - 12", "instalacion": "1 detector / 2 alveolos"},
+        {"tipo": "Calor", "sv_max": 20, "alveolo": "6 - 8", "instalacion": "1 detector / 3 alveolos"},
+        {"tipo": "Calor", "sv_max": 20, "alveolo": "4 - 6", "instalacion": "1 detector / 4 alveolos"},
+        {"tipo": "Calor", "sv_max": 20, "alveolo": "< 4", "instalacion": "1 detector / 5 alveolos"},
+        {"tipo": "Calor", "sv_max": 30, "alveolo": "> 18", "instalacion": "1 detector / 1 alveolo"},
+        {"tipo": "Calor", "sv_max": 30, "alveolo": "12 - 18", "instalacion": "1 detector / 2 alveolos"},
+        {"tipo": "Calor", "sv_max": 30, "alveolo": "9 - 12", "instalacion": "1 detector / 3 alveolos"},
+        {"tipo": "Calor", "sv_max": 30, "alveolo": "6 - 9", "instalacion": "1 detector / 4 alveolos"},
+        {"tipo": "Calor", "sv_max": 30, "alveolo": "< 6", "instalacion": "1 detector / 5 alveolos"},
+        {"tipo": "Humo", "sv_max": 60, "alveolo": "> 36", "instalacion": "1 detector / 1 alveolo"},
+        {"tipo": "Humo", "sv_max": 60, "alveolo": "24 - 36", "instalacion": "1 detector / 2 alveolos"},
+        {"tipo": "Humo", "sv_max": 60, "alveolo": "18 - 24", "instalacion": "1 detector / 3 alveolos"},
+        {"tipo": "Humo", "sv_max": 60, "alveolo": "12 - 18", "instalacion": "1 detector / 4 alveolos"},
+        {"tipo": "Humo", "sv_max": 60, "alveolo": "< 12", "instalacion": "1 detector / 5 alveolos"},
+        {"tipo": "Humo", "sv_max": 80, "alveolo": "> 48", "instalacion": "1 detector / 1 alveolo"},
+        {"tipo": "Humo", "sv_max": 80, "alveolo": "32 - 48", "instalacion": "1 detector / 2 alveolos"},
+        {"tipo": "Humo", "sv_max": 80, "alveolo": "24 - 32", "instalacion": "1 detector / 3 alveolos"},
+        {"tipo": "Humo", "sv_max": 80, "alveolo": "16 - 24", "instalacion": "1 detector / 4 alveolos"},
+        {"tipo": "Humo", "sv_max": 80, "alveolo": "< 16", "instalacion": "1 detector / 5 alveolos"}
+      ]
+    }
+  ]
+}
