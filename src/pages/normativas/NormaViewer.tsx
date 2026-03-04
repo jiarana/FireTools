@@ -5,25 +5,8 @@ import TablaTecnica from '../../components/normativas/TablaTecnica'
 import GaleriaFiguras from '../../components/normativas/GaleriaFiguras'
 import { normasDisponibles } from '../../data/normasDisponibles'
 import tablasManuales from '../../data/normas/tablas-une-23007-14.json'
-
-// Tipo para tablas manuales
-interface TablaTecnicaData {
-  id: string
-  numero_tabla?: string
-  titulo: string
-  capitulo?: string
-  capitulo_titulo?: string
-  articulo?: string
-  articulo_titulo?: string
-  anexo?: string
-  apartado_anexo?: string
-  apartado_anexo_titulo?: string
-  descripcion: string
-  pagina_referencia?: number
-  columnas: string[]
-  notas?: string[]
-  datos: Record<string, string | number>[]
-}
+import { buildValidationMaps, processTextWithLinks } from '../../utils/crossReferences'
+import type { NavigationHandlers, TablaTecnicaData } from '../../utils/crossReferences'
 
 // Info de Anexos
 const ANEXOS_INFO: Record<string, { titulo: string; tipo: string }> = {
@@ -56,6 +39,19 @@ export default function NormaViewer() {
 
   // Obtener figuras de la norma
   const figuras = norma?.figuras || []
+
+  // Construir mapas de validación para referencias cruzadas
+  const validationMaps = useMemo(() => {
+    if (!norma) return null
+    return buildValidationMaps(norma, tablasTecnicas, figuras)
+  }, [norma, tablasTecnicas, figuras])
+
+  // Handlers de navegación para referencias cruzadas
+  const navigationHandlers: NavigationHandlers = useMemo(() => ({
+    handleSelectSeccion,
+    handleSelectTablaTecnica,
+    handleSelectGaleria
+  }), [])
 
   // Seleccionar contenido inicial basado en URL params o por defecto (solo primera carga)
   useEffect(() => {
@@ -264,7 +260,11 @@ export default function NormaViewer() {
         elementos.push(
           <div key={`list-${keyCounter++}`} className="ml-6 my-2 space-y-1 text-sm text-gray-700">
             {listaActual.map((item, i) => (
-              <p key={i} className="leading-relaxed">{item}</p>
+              <p key={i} className="leading-relaxed">
+                {validationMaps
+                  ? processTextWithLinks(item, validationMaps, navigationHandlers)
+                  : item}
+              </p>
             ))}
           </div>
         )
@@ -348,7 +348,9 @@ export default function NormaViewer() {
         flushLista()
         elementos.push(
           <p key={`p-${keyCounter++}`} className="text-gray-700 mb-3 leading-relaxed text-sm">
-            {linea}
+            {validationMaps
+              ? processTextWithLinks(linea, validationMaps, navigationHandlers)
+              : linea}
           </p>
         )
       }
