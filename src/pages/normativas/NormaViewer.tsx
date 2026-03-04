@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useParams, Link, useSearchParams } from 'react-router-dom'
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom'
 import SeccionesNav from '../../components/normativas/SeccionesNav'
 import TablaTecnica from '../../components/normativas/TablaTecnica'
 import GaleriaFiguras from '../../components/normativas/GaleriaFiguras'
@@ -36,9 +36,11 @@ const ANEXOS_INFO: Record<string, { titulo: string; tipo: string }> = {
 export default function NormaViewer() {
   const { normaId } = useParams<{ normaId: string }>()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [seccionActiva, setSeccionActiva] = useState<string | null>(null)
   const [tablaTecnicaActiva, setTablaTecnicaActiva] = useState<string | null>(null)
   const [galeriaActiva, setGaleriaActiva] = useState(false)
+  const [cargaInicial, setCargaInicial] = useState(true)
   const contenidoRef = useRef<HTMLDivElement>(null)
 
   // Obtener tablas tecnicas manuales (solo para UNE 23007-14)
@@ -55,9 +57,9 @@ export default function NormaViewer() {
   // Obtener figuras de la norma
   const figuras = norma?.figuras || []
 
-  // Seleccionar contenido inicial basado en URL params o por defecto
+  // Seleccionar contenido inicial basado en URL params o por defecto (solo primera carga)
   useEffect(() => {
-    if (!norma) return
+    if (!norma || !cargaInicial) return
 
     // Leer parametros de URL
     const seccionParam = searchParams.get('seccion')
@@ -68,6 +70,7 @@ export default function NormaViewer() {
       setSeccionActiva(seccionParam)
       setTablaTecnicaActiva(null)
       setGaleriaActiva(false)
+      setCargaInicial(false)
       return
     }
 
@@ -75,17 +78,19 @@ export default function NormaViewer() {
       setTablaTecnicaActiva(tablaParam)
       setSeccionActiva(null)
       setGaleriaActiva(false)
+      setCargaInicial(false)
       return
     }
 
-    // Si no hay params y no hay nada seleccionado, seleccionar primera seccion
-    if (!seccionActiva && !tablaTecnicaActiva && !galeriaActiva && norma.secciones.length > 0) {
+    // Si no hay params, seleccionar primera seccion
+    if (norma.secciones.length > 0) {
       const primeraSeccion = norma.secciones.find(s => /^\d+$/.test(s.numero))
       if (primeraSeccion) {
         setSeccionActiva(primeraSeccion.numero)
       }
     }
-  }, [norma, searchParams, seccionActiva, tablaTecnicaActiva, galeriaActiva])
+    setCargaInicial(false)
+  }, [norma, searchParams, cargaInicial])
 
   // Calcular contenido agregado para la seccion activa
   const contenidoAgregado = useMemo(() => {
@@ -218,6 +223,8 @@ export default function NormaViewer() {
   const tablaTecnicaSeleccionada = tablasTecnicas.find(t => t.id === tablaTecnicaActiva)
 
   const handleSelectSeccion = (numero: string) => {
+    // Limpiar query params de la URL
+    navigate(`/normativas/${normaId}`, { replace: true })
     setSeccionActiva(numero)
     setTablaTecnicaActiva(null)
     setGaleriaActiva(false)
@@ -225,6 +232,8 @@ export default function NormaViewer() {
   }
 
   const handleSelectTablaTecnica = (id: string) => {
+    // Limpiar query params de la URL
+    navigate(`/normativas/${normaId}`, { replace: true })
     setTablaTecnicaActiva(id)
     setSeccionActiva(null)
     setGaleriaActiva(false)
@@ -232,6 +241,8 @@ export default function NormaViewer() {
   }
 
   const handleSelectGaleria = () => {
+    // Limpiar query params de la URL
+    navigate(`/normativas/${normaId}`, { replace: true })
     setGaleriaActiva(true)
     setSeccionActiva(null)
     setTablaTecnicaActiva(null)
