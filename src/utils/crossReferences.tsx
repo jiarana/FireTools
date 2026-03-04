@@ -320,7 +320,6 @@ export function processTextWithLinks(
     const linkText = match.text.trim()
     if (!linkText) {
       // Si el texto está vacío, renderizar como texto plano
-      console.warn('Empty link text detected:', match)
       elements.push(text.slice(match.start, match.end))
       lastIndex = match.end
       continue
@@ -350,7 +349,7 @@ export function processTextWithLinks(
     elements.push(text.slice(lastIndex))
   }
 
-  return <>{elements}</>
+  return React.createElement(React.Fragment, null, ...elements)
 }
 
 /**
