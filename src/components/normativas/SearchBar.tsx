@@ -17,6 +17,7 @@ export default function SearchBar({ normas }: SearchBarProps) {
   useEffect(() => {
     if (query.length >= 2) {
       const results = buscarEnNormas(fuse, query, 10)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResultados(results)
       setMostrarResultados(true)
     } else {

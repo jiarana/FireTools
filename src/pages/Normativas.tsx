@@ -1,14 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import SearchBar from '../components/normativas/SearchBar'
-import type { Norma } from '../utils/search'
-
-// Importar datos de normas
-import une23007Data from '../data/normas/une-23007-14.json'
-
-// Lista de normas disponibles
-const normasDisponibles: Norma[] = [
-  une23007Data as Norma
-]
+import { normasDisponibles } from '../data/normasDisponibles'
 
 export default function Normativas() {
   const location = useLocation()
@@ -76,6 +68,3 @@ export default function Normativas() {
     </div>
   )
 }
-
-// Exportar normas para uso en otros componentes
-export { normasDisponibles }

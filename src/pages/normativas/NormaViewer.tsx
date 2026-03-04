@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import SeccionesNav from '../../components/normativas/SeccionesNav'
 import TablaTecnica from '../../components/normativas/TablaTecnica'
 import GaleriaFiguras from '../../components/normativas/GaleriaFiguras'
-import { normasDisponibles } from '../Normativas'
+import { normasDisponibles } from '../../data/normasDisponibles'
 import tablasManuales from '../../data/normas/tablas-une-23007-14.json'
 
 // Tipo para tablas manuales
@@ -211,7 +211,7 @@ export default function NormaViewer() {
         /^\(m2?\)\s*\(m\)$/.test(lineaTrim) ||
         /^(m2?|máx\.|º|mm|m\))$/i.test(lineaTrim) ||
         // Filas de datos: múltiples números separados por espacios
-        /^\d[\d\s,\.≤≥<>]+\d$/.test(lineaTrim) && lineaTrim.split(/\s+/).length > 3 ||
+        /^\d[\d\s,.≤≥<>]+\d$/.test(lineaTrim) && lineaTrim.split(/\s+/).length > 3 ||
         // Líneas con muchos números y pocos caracteres de texto
         (lineaTrim.match(/\d/g) || []).length > 5 && (lineaTrim.match(/[a-zA-Z]/g) || []).length < lineaTrim.length * 0.3 ||
         // Leyendas de figuras (líneas cortas descriptivas de símbolos)
@@ -256,7 +256,7 @@ export default function NormaViewer() {
         listaActual.push(linea) // Mantener texto original con el número
       }
       // Detectar lista con guiones (−, –, -) - mantener texto original
-      else if (/^[−–\-]\s/.test(linea)) {
+      else if (/^[−–-]\s/.test(linea)) {
         if (tipoLista !== 'guion') flushLista()
         tipoLista = 'guion'
         listaActual.push(linea) // Mantener texto original con el guion
