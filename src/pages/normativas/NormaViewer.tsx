@@ -5,8 +5,25 @@ import TablaTecnica from '../../components/normativas/TablaTecnica'
 import GaleriaFiguras from '../../components/normativas/GaleriaFiguras'
 import { normasDisponibles } from '../../data/normasDisponibles'
 import tablasManuales from '../../data/normas/tablas-une-23007-14.json'
-import { buildValidationMaps, processTextWithLinks } from '../../utils/crossReferences'
-import type { NavigationHandlers, TablaTecnicaData } from '../../utils/crossReferences'
+
+// Tipo para tablas manuales
+interface TablaTecnicaData {
+  id: string
+  numero_tabla?: string
+  titulo: string
+  capitulo?: string
+  capitulo_titulo?: string
+  articulo?: string
+  articulo_titulo?: string
+  anexo?: string
+  apartado_anexo?: string
+  apartado_anexo_titulo?: string
+  descripcion: string
+  pagina_referencia?: number
+  columnas: string[]
+  notas?: string[]
+  datos: Record<string, string | number>[]
+}
 
 // Info de Anexos
 const ANEXOS_INFO: Record<string, { titulo: string; tipo: string }> = {
@@ -27,11 +44,9 @@ export default function NormaViewer() {
   const contenidoRef = useRef<HTMLDivElement>(null)
 
   // Obtener tablas tecnicas manuales (solo para UNE 23007-14)
-  const tablasTecnicas: TablaTecnicaData[] = useMemo(() =>
-    normaId?.includes('23007-14')
-      ? tablasManuales.tablas as TablaTecnicaData[]
-      : []
-  , [normaId])
+  const tablasTecnicas: TablaTecnicaData[] = normaId?.includes('23007-14')
+    ? tablasManuales.tablas as TablaTecnicaData[]
+    : []
 
   // Buscar la norma
   const norma = normasDisponibles.find(n => {
@@ -40,38 +55,7 @@ export default function NormaViewer() {
   })
 
   // Obtener figuras de la norma
-  const figuras = useMemo(() => norma?.figuras || [], [norma])
-
-  // Construir mapas de validación para referencias cruzadas
-  const validationMaps = useMemo(() => {
-    if (!norma) return null
-    return buildValidationMaps(norma, tablasTecnicas, figuras)
-  }, [norma, tablasTecnicas, figuras])
-
-  // Handlers de navegación para referencias cruzadas
-  const navigationHandlers: NavigationHandlers = useMemo(() => ({
-    handleSelectSeccion: (numero: string) => {
-      navigate(`/normativas/${normaId}`, { replace: true })
-      setSeccionActiva(numero)
-      setTablaTecnicaActiva(null)
-      setGaleriaActiva(false)
-      contenidoRef.current?.scrollTo(0, 0)
-    },
-    handleSelectTablaTecnica: (id: string) => {
-      navigate(`/normativas/${normaId}`, { replace: true })
-      setTablaTecnicaActiva(id)
-      setSeccionActiva(null)
-      setGaleriaActiva(false)
-      contenidoRef.current?.scrollTo(0, 0)
-    },
-    handleSelectGaleria: () => {
-      navigate(`/normativas/${normaId}`, { replace: true })
-      setGaleriaActiva(true)
-      setSeccionActiva(null)
-      setTablaTecnicaActiva(null)
-      contenidoRef.current?.scrollTo(0, 0)
-    }
-  }), [normaId, navigate])
+  const figuras = norma?.figuras || []
 
   // Seleccionar contenido inicial basado en URL params o por defecto (solo primera carga)
   useEffect(() => {
@@ -238,8 +222,32 @@ export default function NormaViewer() {
 
   const tablaTecnicaSeleccionada = tablasTecnicas.find(t => t.id === tablaTecnicaActiva)
 
-  // Extraer funciones de navegación
-  const { handleSelectSeccion, handleSelectTablaTecnica, handleSelectGaleria } = navigationHandlers
+  const handleSelectSeccion = (numero: string) => {
+    // Limpiar query params de la URL
+    navigate(`/normativas/${normaId}`, { replace: true })
+    setSeccionActiva(numero)
+    setTablaTecnicaActiva(null)
+    setGaleriaActiva(false)
+    contenidoRef.current?.scrollTo(0, 0)
+  }
+
+  const handleSelectTablaTecnica = (id: string) => {
+    // Limpiar query params de la URL
+    navigate(`/normativas/${normaId}`, { replace: true })
+    setTablaTecnicaActiva(id)
+    setSeccionActiva(null)
+    setGaleriaActiva(false)
+    contenidoRef.current?.scrollTo(0, 0)
+  }
+
+  const handleSelectGaleria = () => {
+    // Limpiar query params de la URL
+    navigate(`/normativas/${normaId}`, { replace: true })
+    setGaleriaActiva(true)
+    setSeccionActiva(null)
+    setTablaTecnicaActiva(null)
+    contenidoRef.current?.scrollTo(0, 0)
+  }
 
   // Renderizar contenido de una seccion con formato mejorado
   const renderSeccionContenido = (contenido: string) => {
@@ -256,11 +264,7 @@ export default function NormaViewer() {
         elementos.push(
           <div key={`list-${keyCounter++}`} className="ml-6 my-2 space-y-1 text-sm text-gray-700">
             {listaActual.map((item, i) => (
-              <p key={i} className="leading-relaxed">
-                {validationMaps
-                  ? processTextWithLinks(item, validationMaps, navigationHandlers)
-                  : item}
-              </p>
+              <p key={i} className="leading-relaxed">{item}</p>
             ))}
           </div>
         )
@@ -344,9 +348,7 @@ export default function NormaViewer() {
         flushLista()
         elementos.push(
           <p key={`p-${keyCounter++}`} className="text-gray-700 mb-3 leading-relaxed text-sm">
-            {validationMaps
-              ? processTextWithLinks(linea, validationMaps, navigationHandlers)
-              : linea}
+            {linea}
           </p>
         )
       }
