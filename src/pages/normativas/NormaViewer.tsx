@@ -91,6 +91,36 @@ export default function NormaViewer() {
   const contenidoAgregado = useMemo(() => {
     if (!norma || !seccionActiva) return null
 
+    // Si es una subsección (ej: 3.15), mostrar el capítulo padre
+    if (/^\d+\.\d+/.test(seccionActiva)) {
+      const capituloNum = seccionActiva.split('.')[0]
+      const capituloPrincipal = norma.secciones.find(s => s.numero === capituloNum)
+
+      // Obtener todas las subsecciones del capítulo
+      const subsecciones = norma.secciones.filter(s => {
+        if (s.numero === capituloNum) return false
+        return s.numero.startsWith(`${capituloNum}.`)
+      }).sort((a, b) => {
+        const partsA = a.numero.split('.').map(n => parseInt(n) || 0)
+        const partsB = b.numero.split('.').map(n => parseInt(n) || 0)
+        for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+          if ((partsA[i] || 0) !== (partsB[i] || 0)) {
+            return (partsA[i] || 0) - (partsB[i] || 0)
+          }
+        }
+        return 0
+      })
+
+      return {
+        tipo: 'capitulo' as const,
+        numero: capituloNum,
+        titulo: capituloPrincipal?.titulo || '',
+        contenidoPrincipal: capituloPrincipal?.contenido || '',
+        subsecciones,
+        subseccionDestacada: seccionActiva // Marca cuál subsección resaltar
+      }
+    }
+
     // Verificar si es un Anexo (ANEXO_A, ANEXO_B, etc.)
     const anexoMatch = seccionActiva.match(/^ANEXO_([A-Z])$/)
     if (anexoMatch) {
@@ -152,6 +182,19 @@ export default function NormaViewer() {
 
     return null
   }, [norma, seccionActiva])
+
+  // Scroll a subsección destacada
+  useEffect(() => {
+    if (seccionActiva && /^\d+\.\d+/.test(seccionActiva)) {
+      // Esperar a que se renderice el contenido
+      setTimeout(() => {
+        const elemento = document.getElementById(`seccion-${seccionActiva}`)
+        if (elemento) {
+          elemento.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
+    }
+  }, [seccionActiva, contenidoAgregado])
 
   if (!norma) {
     return (
@@ -363,16 +406,29 @@ export default function NormaViewer() {
               {/* Subsecciones */}
               {contenidoAgregado.subsecciones && contenidoAgregado.subsecciones.length > 0 && (
                 <div className="space-y-4">
-                  {contenidoAgregado.subsecciones.map(sub => (
-                    <div key={sub.numero} className="border-l-2 border-gray-200 pl-4">
-                      <h3 className="font-semibold text-gray-800 mb-2">
-                        {sub.numero} {sub.titulo}
-                      </h3>
-                      <div className="prose prose-sm max-w-none">
-                        {renderSeccionContenido(sub.contenido)}
+                  {contenidoAgregado.subsecciones.map(sub => {
+                    const isDestacada = contenidoAgregado.subseccionDestacada === sub.numero
+                    return (
+                      <div
+                        key={sub.numero}
+                        id={`seccion-${sub.numero}`}
+                        className={`border-l-2 pl-4 ${
+                          isDestacada
+                            ? 'border-red-500 bg-red-50 -ml-2 -mr-2 p-4 rounded'
+                            : 'border-gray-200'
+                        }`}
+                      >
+                        <h3 className={`font-semibold mb-2 ${
+                          isDestacada ? 'text-red-700' : 'text-gray-800'
+                        }`}>
+                          {sub.numero} {sub.titulo}
+                        </h3>
+                        <div className="prose prose-sm max-w-none">
+                          {renderSeccionContenido(sub.contenido)}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 
