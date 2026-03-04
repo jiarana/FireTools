@@ -27,9 +27,11 @@ export default function NormaViewer() {
   const contenidoRef = useRef<HTMLDivElement>(null)
 
   // Obtener tablas tecnicas manuales (solo para UNE 23007-14)
-  const tablasTecnicas: TablaTecnicaData[] = normaId?.includes('23007-14')
-    ? tablasManuales.tablas as TablaTecnicaData[]
-    : []
+  const tablasTecnicas: TablaTecnicaData[] = useMemo(() =>
+    normaId?.includes('23007-14')
+      ? tablasManuales.tablas as TablaTecnicaData[]
+      : []
+  , [normaId])
 
   // Buscar la norma
   const norma = normasDisponibles.find(n => {
@@ -38,7 +40,7 @@ export default function NormaViewer() {
   })
 
   // Obtener figuras de la norma
-  const figuras = norma?.figuras || []
+  const figuras = useMemo(() => norma?.figuras || [], [norma])
 
   // Construir mapas de validación para referencias cruzadas
   const validationMaps = useMemo(() => {
@@ -48,10 +50,28 @@ export default function NormaViewer() {
 
   // Handlers de navegación para referencias cruzadas
   const navigationHandlers: NavigationHandlers = useMemo(() => ({
-    handleSelectSeccion,
-    handleSelectTablaTecnica,
-    handleSelectGaleria
-  }), [])
+    handleSelectSeccion: (numero: string) => {
+      navigate(`/normativas/${normaId}`, { replace: true })
+      setSeccionActiva(numero)
+      setTablaTecnicaActiva(null)
+      setGaleriaActiva(false)
+      contenidoRef.current?.scrollTo(0, 0)
+    },
+    handleSelectTablaTecnica: (id: string) => {
+      navigate(`/normativas/${normaId}`, { replace: true })
+      setTablaTecnicaActiva(id)
+      setSeccionActiva(null)
+      setGaleriaActiva(false)
+      contenidoRef.current?.scrollTo(0, 0)
+    },
+    handleSelectGaleria: () => {
+      navigate(`/normativas/${normaId}`, { replace: true })
+      setGaleriaActiva(true)
+      setSeccionActiva(null)
+      setTablaTecnicaActiva(null)
+      contenidoRef.current?.scrollTo(0, 0)
+    }
+  }), [normaId, navigate])
 
   // Seleccionar contenido inicial basado en URL params o por defecto (solo primera carga)
   useEffect(() => {
@@ -218,32 +238,8 @@ export default function NormaViewer() {
 
   const tablaTecnicaSeleccionada = tablasTecnicas.find(t => t.id === tablaTecnicaActiva)
 
-  const handleSelectSeccion = (numero: string) => {
-    // Limpiar query params de la URL
-    navigate(`/normativas/${normaId}`, { replace: true })
-    setSeccionActiva(numero)
-    setTablaTecnicaActiva(null)
-    setGaleriaActiva(false)
-    contenidoRef.current?.scrollTo(0, 0)
-  }
-
-  const handleSelectTablaTecnica = (id: string) => {
-    // Limpiar query params de la URL
-    navigate(`/normativas/${normaId}`, { replace: true })
-    setTablaTecnicaActiva(id)
-    setSeccionActiva(null)
-    setGaleriaActiva(false)
-    contenidoRef.current?.scrollTo(0, 0)
-  }
-
-  const handleSelectGaleria = () => {
-    // Limpiar query params de la URL
-    navigate(`/normativas/${normaId}`, { replace: true })
-    setGaleriaActiva(true)
-    setSeccionActiva(null)
-    setTablaTecnicaActiva(null)
-    contenidoRef.current?.scrollTo(0, 0)
-  }
+  // Extraer funciones de navegación
+  const { handleSelectSeccion, handleSelectTablaTecnica, handleSelectGaleria } = navigationHandlers
 
   // Renderizar contenido de una seccion con formato mejorado
   const renderSeccionContenido = (contenido: string) => {

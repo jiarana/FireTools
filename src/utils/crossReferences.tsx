@@ -316,6 +316,16 @@ export function processTextWithLinks(
       elements.push(text.slice(lastIndex, match.start))
     }
 
+    // Validar que el texto del enlace no esté vacío
+    const linkText = match.text.trim()
+    if (!linkText) {
+      // Si el texto está vacío, renderizar como texto plano
+      console.warn('Empty link text detected:', match)
+      elements.push(text.slice(match.start, match.end))
+      lastIndex = match.end
+      continue
+    }
+
     // Crear enlace
     elements.push(
       <button
@@ -328,7 +338,7 @@ export function processTextWithLinks(
         title={`Ir a ${getDestinationLabel(match)}`}
         type="button"
       >
-        {match.text}
+        {linkText}
       </button>
     )
 
