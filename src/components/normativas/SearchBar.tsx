@@ -56,10 +56,20 @@ export default function SearchBar({ normas }: SearchBarProps) {
       {/* Resultados dropdown */}
       {mostrarResultados && resultados.length > 0 && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
-          {resultados.map((r, i) => (
+          {resultados.map((r, i) => {
+            // Construir URL con query params para ir directamente a la seccion o tabla
+            const params = new URLSearchParams()
+            if (r.tipo === 'seccion' && r.seccion) {
+              params.set('seccion', r.seccion.numero)
+            } else if (r.tipo === 'tabla' && r.tabla) {
+              params.set('tabla', r.tabla.id)
+            }
+            const url = `/normativas/${r.normaId}?${params.toString()}`
+
+            return (
             <Link
               key={i}
-              to={`/normativas/${r.normaId}`}
+              to={url}
               className="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
             >
               <div className="flex items-start">
@@ -83,7 +93,8 @@ export default function SearchBar({ normas }: SearchBarProps) {
                 </div>
               </div>
             </Link>
-          ))}
+            )
+          })}
         </div>
       )}
 

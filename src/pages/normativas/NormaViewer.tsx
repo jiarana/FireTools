@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import SeccionesNav from '../../components/normativas/SeccionesNav'
 import TablaTecnica from '../../components/normativas/TablaTecnica'
 import GaleriaFiguras from '../../components/normativas/GaleriaFiguras'
@@ -35,6 +35,7 @@ const ANEXOS_INFO: Record<string, { titulo: string; tipo: string }> = {
 
 export default function NormaViewer() {
   const { normaId } = useParams<{ normaId: string }>()
+  const [searchParams] = useSearchParams()
   const [seccionActiva, setSeccionActiva] = useState<string | null>(null)
   const [tablaTecnicaActiva, setTablaTecnicaActiva] = useState<string | null>(null)
   const [galeriaActiva, setGaleriaActiva] = useState(false)
@@ -54,15 +55,37 @@ export default function NormaViewer() {
   // Obtener figuras de la norma
   const figuras = norma?.figuras || []
 
-  // Seleccionar primera seccion al cargar (solo si no hay nada seleccionado)
+  // Seleccionar contenido inicial basado en URL params o por defecto
   useEffect(() => {
-    if (norma && norma.secciones.length > 0 && !seccionActiva && !tablaTecnicaActiva && !galeriaActiva) {
+    if (!norma) return
+
+    // Leer parametros de URL
+    const seccionParam = searchParams.get('seccion')
+    const tablaParam = searchParams.get('tabla')
+
+    // Si hay parametros de busqueda, usarlos
+    if (seccionParam) {
+      setSeccionActiva(seccionParam)
+      setTablaTecnicaActiva(null)
+      setGaleriaActiva(false)
+      return
+    }
+
+    if (tablaParam) {
+      setTablaTecnicaActiva(tablaParam)
+      setSeccionActiva(null)
+      setGaleriaActiva(false)
+      return
+    }
+
+    // Si no hay params y no hay nada seleccionado, seleccionar primera seccion
+    if (!seccionActiva && !tablaTecnicaActiva && !galeriaActiva && norma.secciones.length > 0) {
       const primeraSeccion = norma.secciones.find(s => /^\d+$/.test(s.numero))
       if (primeraSeccion) {
         setSeccionActiva(primeraSeccion.numero)
       }
     }
-  }, [norma, seccionActiva, tablaTecnicaActiva, galeriaActiva])
+  }, [norma, searchParams, seccionActiva, tablaTecnicaActiva, galeriaActiva])
 
   // Calcular contenido agregado para la seccion activa
   const contenidoAgregado = useMemo(() => {
